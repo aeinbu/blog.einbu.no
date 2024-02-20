@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Arjans blog</title>
+	<link rel="stylesheet" href="/css/layout.css">
+	<link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+	<div class="container main">
+		<section class="no-columns">
+			<h1>Arjans blog</h1>
+			<p>
+                Arjan: Technical Learnings of Programmings for Make Benefit Glorious Framework of .NET
+			</p>
+			<p class="signature">-Arjan Einbu</p>
+		</section>
+
+		<section class="columns">
+
+            <article class="block border">
+                <h2>
+                    What is the fascination with Twitter?
+                </h2>
+                <small>August 2009</small>
+                <p>
+                    Ok, I know this isn't exactly breaking news. Twitter has been out there for a couple of years, but still many people don't know what Twitter is.
+                </p>
+				<p>
+                    If you're one of them, have a look at this short video explaining Twitter. <em>(Link in the article)</em>
+                </p>
+				<p>
+                    And even knowing what Twitter is, fewer understand the fascination with it.
+                    I think Twitter with its simplicity has several interresting aspects, and they are different for all of us.
+                </p>
+				<p><a href="/2009/08/what-is-the-fascination-with-twitter/">Continue reading</a></p>
+            </article>
+
+            <article class="block border">
+                <h2>
+                    Traverse a hierarchical structure with LINQ-to-Hierarchical
+                </h2>
+                <small>July 2009</small>
+                <p>
+                    RecentIy I needed to find a specific TreeNode in a TreeView control.
+                </p>
+				<p>
+                    I expected that would be easy with LINQ, but quickly realized that there is no method in the .NET framework that will let me traverse all nodes of a hierarchy.
+                </p>
+				<p>
+                    I decided to create one myself.
+                </p>
+				<p><a href="/2009/07/traverse-a-hierarchy-with-linq-to-hierarchical/">Continue reading</a></p>
+
+            </article>
+
+            <article class="highlight">
+                <h2>Mythbusters: Unit-testing</h2>
+                <small>July 2009</small>
+                <p>
+                    While I believe most or many developers have heard of JUnit/NUnit/&lt;your testing framework here&gt;, fewer know how to write a test and running it using such a framework. And from those, even fewer have a good understanding of how to make unit testing a part of the development workflow.
+                </p>
+				<p>
+                    I've known about unit testing and unit test frameworks for maybe 7-8 years. I first tried using it in a small project 5-6 years ago, but it is only in the last few years that I've learned how to do it right. (ie. found a way that works for me and my team…)
+                </p>
+				<p> 
+                    For me some of the things learned were:
+                </p>
+				<p><a href="/2009/07/myth-busting-unit-testing/">Continue reading</a></p>
+            </article>
+
+            <article class="block border">
+				<h2>The trouble with delimited</h2>
+                <small>June 2009</small>
+				<p>
+                    In this previous article articles about parsing files, I took a very simplistic approach to reading a delimited file. I used string.Split, which doesn't handle the use of quotes and usage of the delimiter character inside quotes.
+                </p>
+				<p>
+                    Well, it turns out theres more to reading a delimited file than splitting at the delimiter…
+                </p>
+				<p><a href="/2009/06/the-trouble-with-delimited/">Continue reading</a></p>
+			</article>
+
+			<article class="block border">
+				<h2>
+                    More parsing textfiles with LINQ
+                </h2>
+                <small>March 2009</small>
+				<p>
+                    In a previous article, I described how to use LINQ when parsing a textfile.
+                </p>
+				<p>
+                    Following that train of thoughts further, I found a more elegant way of splitting the lines from the file into columns.
+                </p>
+				<p>
+                    Creating extension methods on top of IEnumerable&lt;string&gt; seems like a good idea! Something that could be used like this for a comma-separated file:
+                </p>
+                <pre class="code">
+from columns in reader.AsEnumerable().AsDelimited(delimiter)
+select ...
+</pre>
+				<p><a href="/2009/04/more-parsing-textfiles-with-linq/">Continue reading</a></p>
+			</article>
+
+            <article class="block border">
+				<h2>
+                    Parsing textfiles with LINQ (or LINQ-to-TextReader)
+                </h2>
+                <small>March 2009</small>
+				<p>
+                    Reading and parsing files is really no difficult task with the .NET framework. The System.IO namespace has several good classes to aid that task.
+                </p>
+				<p><a href="/2009/03/parsing-textfiles-with-linq/">Continue reading</a></p>
+			</article>
+
+
+
+		</section>
+	</div>
+	<footer class="container">
+		Copyright &copy; 2009-2024 Arjan Einbu.
+	</footer>
+</body>
+
+</html>

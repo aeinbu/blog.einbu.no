@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traverse a hierarchical structure with LINQ-to-Hierarchical</title>
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container main">
+        <section class="no-columns">
+
+            <article class="block border">
+                <h2>Traverse a hierarchical structure with LINQ-to-Hierarchical</h2>
+                <small>Originally published on blog.einbu.no July 13. 2009</small>
+                <p>
+                    RecentIy I needed to find a specific TreeNode in a TreeView control. I expected that would be easy with LINQ, but quickly realized that there is no method in the .NET framework that will let me traverse all nodes of a hierarchy. I decided to create one myself.
+                </p>
+                <p>
+                    I started by trying out how I would expect to use it. I quickly landed on a syntax like this:
+                </p>
+                <pre class="code">
+var q = from node in root.FlattenHierarchy()
+        select node;
+</pre>
+                <p>
+                    How would the hierarchy be flattened? Well, implemented as an extension method, the method would look like this:
+                </p>
+                <pre class="code">
+public static class LinqToHierarchical
+{
+    public static IEnumerable FlattenHierarchy(this TreeNode node)
+    {
+        yield return node;
+        if(node.Nodes != null)
+        {
+            foreach(var child in node.Nodes)
+            {
+                foreach(var childOrDescendant in child.FlattenHierarchy())
+                {
+                    yield return childOrDescendant;
+                }
+            }
+        }
+    }
+}
+</pre>
+                </p>
+                    The above code works, and there are no problems with it if you know beforehand what kind of hierarchy you're going to work with. In the code above, it works well with the nodes of a Windows Forms TreeView control.
+                </p>
+                </p>
+                    Yet still, I'm not satisfied. Can I make a generic extension method that will flatten any hierarchy? Even those not made up of TreeNode objects?
+                </p>
+                </p>
+                    To do that, we need to analyze which parts of the method needs to be swapped out. That would be the TreeNode's Nodes property. Can we acccess that in an other way? Yes, I think a delegate can help us, so lets give it a try:
+                </p>
+                <pre class="code">
+public static IEnumerable FlattenHierarchy(this T node, Func<T, IEnumerable> getChildEnumerator)
+{
+    yield return node;
+    if(getChildEnumerator(node) != null)
+    {
+        foreach(var child in getChildEnumerator(node))
+        {
+            foreach(var childOrDescendant in child.FlattenHierarchy(getChildEnumerator))
+            {
+                yield return childOrDescendant;
+            }
+        }
+    }
+}
+</pre>
+                </p>
+                    Now, that wasn't difficult. But did we just complicate the usage of our extension method? Yes, we did. When we're going to flatten a hierarchy, we'll have to tell where to find the children. Not to hard though, since we can use a lambda expression for that. Here's how we use it now:
+                </p>
+                <pre class="code">
+var q = from node in root.FlattenHierarchy(x => x.Nodes)
+        select node;
+</pre>
+                </p>
+                    Now we're able to use it with any hierarchy. Some samples include:
+                </p>
+                <pre class="code">
+//The filesystem
+var q = from directory in new DirectoryInfo(@"c:\").FlattenHierarchy(x => x.GetDirectories())
+        select directory;
+</pre>
+                <pre class="code">
+//XML (Yeah, I know: xml.Descendants() will also flatten this...)
+var xml = XElement.Load(@"filename.xml");
+var q = from element in xml.FlattenHierarchy(x => x.Elements())
+        select element;
+</pre>
+                <pre class="code">
+//Control tree in Windows Forms or in ASP.NET
+var q = from control in Controls.FlattenHierarchy(x => x.Controls)
+        select control;
+</pre>
+                <p>
+                    Now, where can you go from here? I think what we have here is quite usefull as is, but some ideas include;
+                </p>
+                <ul>
+                    <li>Limit traversal on depth level</li>
+                    <li>Include leaf nodes of types that don't include a subnode collection</li>
+                    <li>Traverse one level at a time, instead of traversing down each branch as we find them</li>
+                </ul>
+
+            </article>
+        </section>
+    </div>
+</body>
+
+</html>
