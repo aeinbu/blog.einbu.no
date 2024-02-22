@@ -137,6 +137,8 @@ blockquote:after {
 	vertical-align: -0.4em;
 }
 
+/* pre rules */
+
 pre.code,
 pre.csv,
 pre.fixed {

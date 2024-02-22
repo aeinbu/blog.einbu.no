@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom ASP.NET DataSource parameters</title>
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <div class="container main">
+        <section class="no-columns">
+
+            <article class="block border">
+                <h2>Custom ASP.NET DataSource parameters</h2>
+                <small>Originally published on blog.einbu.no February 1. 2010</small>
+                <p>
+                    With ASP.NETs DataSource controls you can parameterize your query and have those parameters
+                    automatically fetched from one of a few standard sources. Those include getting a parameter value
+                    from the querystring, a form parameter, a control or from a users session variables, profile or
+                    cookies.
+                </p>
+                <p>
+                    These parameter types enables us to build a lot of functionality without leaving ASP.NET markup.
+                    Still, they don't cover every imaginable scenario. So when someone asked <a
+                        href="http://stackoverflow.com/questions/1574554/how-to-utilize-asp-net-current-user-name-in-sqlparameter-without-code-behind">how
+                        to get the username as a parameter in this question on Stackoverflow</a>, it inspired me to
+                    write this article.
+                </p>
+                <p>
+                    The easiest way would of course be to just use an asp:Parameter, and set the parameter value in code
+                    behind, like I do here:
+                </p>
+                <pre class="code">
+&lt;asp:Parameter name="Username" /&gt;
+</pre>
+                <pre class="code">
+protected void Page_Load(object sender, EventArgs e)
+{
+    SqlDataSource1.SelectParameters["Username"].DefaultValue = User.Identity.Name;
+}
+</pre>
+                <p>
+                    However, this is neither the most elegant nor best way to solve this. We can create our own
+                    parameter types instead and then use them in markup. That will save us from the code behind.
+                </p>
+                <h3>
+                    Creating a custom parameter
+                </h3>
+                <p>
+                    All you need is to inherit from the <code>System.Web.UI.WebControls.Parameter</code> class, and override the
+                    Evaluate method.
+                </p>
+                <pre class="code">
+using System.Web.UI.WebControls;
+
+namespace DemiCode.Web.Parameters
+{
+    public class LoginParameter : Parameter
+    {
+        protected override object Evaluate(HttpContext context, System.Web.UI.Control control)
+        {
+            return context.User.Identity.Name;
+        }
+    }
+}
+</pre>
+                <p>
+                    You can throw in some more functionality if you like. Perhaps a property to decide the format of the
+                    username (with or without the domain name) or maybe put in some exception handling...
+                </p>
+                <h3>
+                    Using a custom parameter
+                </h3>
+                <p>
+                    To use this parameter from ASP.NET markup, you need to register the parameter in the same way as you
+                    would with a custom control: Either on each page that uses the parameter by adding the Register
+                    directive just below the Page directive:
+                </p>
+                <pre class="code">
+&lt;%@ Register tagPrefix="dc" assembly="DemiCode.Web" namespace="DemiCode.Web.Parameters" %&gt;
+</pre>
+                <p>
+                    Or in the web.config file in the configuration/system.web/pages/controls element to make it
+                    available to all pages in your web:
+                </p>
+                <pre class="code">
+&lt;system.web&gt;
+    &lt;pages&gt;
+        &lt;controls&gt;
+            &lt;add assembly="DemiCode.Web" namespace="DemiCode.Web.Parameters" tagPrefix="dc" /&gt;
+      &lt;/controls&gt;
+    &lt;/pages&gt;
+&lt;/system.web&gt;
+</pre>
+                <p>
+                    <em>Note: I have assumed that the parameter is in the DemiCode.Web project/assembly.</em>
+                </p>
+                <p>
+                    To use the new parameter, see how I changed the <code>asp:Parameter</code> to the new
+                    <code>dc:LoginParameter</code> in the markup below:
+                </p>
+                <pre class="code">
+&lt;dc:LoginParameter name="Username" /&gt;
+</pre>
+                <p>
+                    See? We just eliminated the need for the codebehind. Its all done in markup. You just need the
+                    LoginParameter class I just created, and you can use this functionality in as many places you want.
+                </p>
+                <h3>
+                    But wait! There is more...
+                </h3>
+                <p>
+                    Let me get you started with some inspirational samples.
+                </p>
+                <pre class="code">
+using System.Web.UI.WebControls;
+using System.Configuration;
+
+namespace DemiCode.Web.Parameters
+{
+    public class ConfigParameter : Parameter
+    {
+        public string Key{get;set;}
+
+        protected override object Evaluate(HttpContext context, System.Web.UI.Control control)
+        {
+            return ConfigurationManager.AppSettings[Key];
+        }
+    }
+
+    public class NowParameter : Parameter
+    {
+        protected override object Evaluate(HttpContext context, System.Web.UI.Control control)
+        {
+            return DateTime.Now;
+        }
+    }
+
+    public class TodayParameter
+    {
+        protected override object Evaluate(HttpContext context, System.Web.UI.Control control)
+        {
+            return DateTime.Today;
+        }
+    }
+}
+</pre>
+                <p>
+                    Let me know if you created a cool custom parameter!
+                </p>
+
+            </article>
+        </section>
+    </div>
+</body>
+
+</html>

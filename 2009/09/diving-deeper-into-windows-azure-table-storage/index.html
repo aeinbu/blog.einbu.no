@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diving deeper into Windows Azure table storage</title>
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <div class="container main">
+        <section class="no-columns">
+
+            <article class="block border">
+                <h2>Diving deeper into Windows Azure table storage</h2>
+                <small>Originally published on blog.einbu.no September 14. 2009</small>
+                <p>
+                    In
+                    <a href="http://blog.einbu.no/2009/08/howto-use-windows-azure-table-storage">
+                        this previous post about Windows Azure Table Storage
+                    </a>, I relied on the StorageClient project in
+                    the Azure SDK samples. This feels a bit strange, and raises the question: Am I expected to include
+                    references to sample projects and be using Microsoft.Samples.whatever namespaces in my future
+                    projects?
+                </p>
+                <p>
+                    This raises a couple of questions about license, copyright, support and more. Instead of digging
+                    into those questions, I came up with some alternate questions:
+                </p>
+                <ul>
+                    <li>What does this sample project give us?</li>
+                    <li>How does it work?</li>
+                    <li>Can we do these things ourselves?</li>
+                </ul>
+                <p>
+                    A lot of the searching was done in the sample code, since most of the other articles about accessing
+                    Windows Azure Table Storage depend on the same sample files. I was disappointed to see that even the
+                    Windows Azure SDK help file shows some partial code calling into the sample project. Little help
+                    there...
+                <p>
+                    So, looking at that previous post again; All my entity classes inherit from TableStorageEntity and I
+                    use the TableStorageDataContext as a base class for accessing entities in the Azure Table Storage.
+                </p>
+                <h3>
+                    Why did I inherit TableStorageEntity?
+                </h3>
+                <p>
+                    My entities need not inherit TableStorageEntity at all. That class contains very little code. All
+                    thats needed for a entity class is to create a few properties and then decorate the class with the
+                    DataServiceKey attribute. Heres a minimum implementation:
+                </p>
+                <pre class="code">
+using System.Data.Services.Common;
+
+[DataServiceKey("PartitionKey", "RowKey")]
+public class MyEntity
+{
+    public string PartitionKey {get; set;}
+    public string RowKey {get; set;}
+    public DateTime Timestamp {get; set;}
+
+    //...and our own properties
+}
+</pre>
+                <p>
+                    The names and types of these properties are mandatory:
+                </p>
+                <ul>
+                    <li><b>PartitionKey</b> (string) allows Windows Azure Table Storage to spread our data between
+                        different
+                        storage nodes. All entities with the same partitionkey reside on the same storage node.
+                        Splitting up
+                        our data on multiple partitions allows for massive scalability if needed.</li>
+                    <li><b>RowKey</b> (string) must be unique within a partition. The PartitionKey and RowKey together
+                        make up the
+                        unique key for the entity.</li>
+                    <li><b>Timestamp</b> (DateTime) stores the last modified time for the entity and can be used for
+                        optimistic
+                        concurrency. The value is set automatically by the Azure Table Storage.</li>
+                </ul>
+                <p>
+                    In addition to this, the TableStorageEntity class also contains some convenience constructors taking
+                    parameters for PartitionKey and RowKey (which aren't really needed). That class also overrides the
+                    Equals and GetHashCode methods taking the PartitionKey and RowKey into account. This is not a
+                    requirement to make everything work.
+                </p>
+                <h3>
+                    ...and what about TableStorageDataServiceContext?
+                </h3>
+                <p>
+                    Well, it turns out I didn't actually need that class either.
+                </p>
+                <p>
+                    TableStorageDataServiceContext inherits DataServiceContext.
+                </p>
+                <p>
+                    Previously I had used it for three things:
+                </p>
+                <h3>
+                    Infer the schema to Windows Azure Table Storage using the TableStorage.CreateTablesFromModel method.
+                </h3>
+                <p>
+                    The CreateTablesFromModel method determines which tablenames need to be registered. It does so by
+                    reflecting over the model. It looks properties of type IQueryable&lt;T&gt; where T is an entity. An
+                    entity
+                    is in this case defined as a class having at least one key. And a key is defined as a property
+                    with either the DataServiceKey attribute or by ending in "ID". (Devtablegen.exe is stricter than
+                    this, since it accepts only the DataServiceKey attribute with the specific key names
+                    PartitionKey and RowKey.)
+                </p>
+                <p>
+                    Azure Table Storage has no notion of table schema, so we need only register the table name. Once
+                    registered, we can throw any kind of entities in there.
+                </p>
+                <p>
+                    So if I can bypass the CreateTablesFromModel method, and instead register the tablenames manually, I
+                    should be good to go!
+                </p>
+                <p>
+                    So how can we register a tablename in Azure Table Storage? Its all about putting together the right
+                    WebRequest. The easiest way to do that, is using the DataServiceContext from System.Data.Services
+                    (Astoria). If I can create a DataServiceContext object for my Azure Table Storage, its as easy as
+                    calling the AddObject method passing a table:
+                </p>
+                <pre class="code">
+DataServiceContext ctx = new DataServiceContext(new Uri("http://myaccount.table.core.windows.net/"));
+ctx.SendingRequest += ctx_SendingRequest;
+
+ctx.AddObject("Tables", new MyTable() { TableName = "MyEntities" });
+ctx.SaveChanges();
+</pre>
+                <p>
+                    The ctx_SendingRequest eventhandler takes care of authentication. Authentication is an important
+                    part of the TableStorageEntity class, but we can implement it ourselves. This is an implentation of
+                    the SharedKeyLite authentication scheme taken from my previous article:
+                    <a href="http://blog.einbu.no/2009/08/authenticating-against-azure-table-storage/">Authenticating
+                        with Azure Table Storage.
+                    </a>
+                </p>
+                <pre class="code">
+static void ctx_SendingRequest(object sender, SendingRequestEventArgs e)
+{
+    var account = "myaccount"; //replace with you account
+    var sharedKey = Convert.FromBase64String("Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="); //replace with your key
+
+    e.Request.ContentLength = 0;
+    e.Request.Headers.Add("x-ms-date", DateTime.UtcNow.ToString("R",
+        CultureInfo.InvariantCulture));
+
+    var resource = e.Request.RequestUri.PathAndQuery;
+    if (resource.Contains("?"))
+    {
+        resource = resource.Substring(0, resource.IndexOf("?"));
+    }
+
+    string stringToSign = string.Format("{0}\n/{1}{2}",
+            e.Request.Headers["x-ms-date"],
+            account,
+            resource
+        );
+
+    HMACSHA256 hasher = new HMACSHA256(sharedKey);
+
+    string signedSignature = Convert.ToBase64String(hasher.ComputeHash(Encoding.UTF8.GetBytes(stringToSign)));
+    string authorizationHeader = string.Format("SharedKeyLite {0}:{1}",
+        account, signedSignature);
+    e.Request.Headers.Add("Authorization", authorizationHeader);
+}
+</pre>
+                <p>
+                    And the table class looks like this:
+                </p>
+                <pre class="code">
+[DataServiceKey("TableName")]
+internal class MyTable
+{
+    public string TableName { get; set; }
+}
+</pre>
+                <h3>
+                    Infer the schema to the Development Storage with the devtablegen.exe utility.
+                </h3>
+                <p>
+                    When executing <code>devtablegen.exe /?</code> on the commandline, the description says:
+                </p>
+                <blockquote>
+                    Creates tables for use with the development storage table service from a list of managed assemblies.
+                    The devtablegen tool scans the given set of assemblies for properties of type IQueryable&lt;C&gt; on
+                    classes derived from DataServiceContext. If the class C (or a base class of C) has
+                    the DataServiceKey("PartitionKey", "RowKey") attribute, then a table named after the name of the
+                    property is created with a schema corresponding to the declaration of class C.
+                </blockquote>
+                <p>
+                    See? There's nothing there indicating the need for TableStorageDataServiceClient. Here's what I
+                    need:
+                </p>
+                <pre class="code">
+using System.Data.Services.Client;
+
+public class MyServiceContext : DataServiceContext
+{
+    public IQueryable MyTableName {get; set;}
+}
+</pre>
+                <p>
+                    Where MyTableName names the table to be created, and MyEntity defines the table's schema.
+                </p>
+                <p>
+                    (Or we could just create the database and it's tables directly inside SQL Server, and then point
+                    development storage to use that database. When we then don't use devtablegen.exe, we don't need this
+                    class at all.)
+                </p>
+                <h3>
+                    Access the table storage to view or manipulate the data in the table store.
+                </h3>
+                <p>
+                    I thought this one was going to be a bit tricky, but I see that I have already done the grunt work.
+                    If I reuse the ctx_SendingRequest method from above and create a DataServiceContext again, I can use
+                    that DataServiceContext to query Azure Table Storage like this:
+                </p>
+                <pre class="code">
+DataServiceContext ctx = new DataServiceContext(new Uri("http://myaccount.table.core.windows.net/"));
+ctx.SendingRequest += ctx_SendingRequest;
+var query = ctx.CreateQuery("MyEntities");
+</pre>
+                <p>
+                    Or even use LINQ to filter the data before it is being sent over the wire:
+                </p>
+                <pre class="code">
+foreach (var item in ctx.CreateQuery("MyEntities").Take(3))
+{
+    Console.WriteLine(item);
+}
+</pre>
+                <p>
+                    Alternatively, you can use the RESTful XML based requests/responses that System.Data.Services
+                    (Astoria) gives you, as this is what Windows Azure Table Storage uses, but you'll still need to
+                    handle authenticating your requests as above. (My
+                    <a href="http://blog.einbu.no/2009/08/authenticating-against-azure-table-storage/">Authenticating
+                        with Azure Table Storage article
+                    </a>
+                    mentioned earlier demonstrates how!)
+                </p>
+                <h3>
+                    So what now?
+                </h3>
+                <p>
+                    In this article, I've shown that you can use Azure table storage without the SDK or the
+                    StorageClient sample project. All the classes referenced by code on this page are part of the .NET
+                    framework already installed on your computer. So go ahead and access Azure Table Storage...
+                </p>
+                <p>
+                    Also, I've kept only the minimum things needed to make it work. I've probably left out some
+                    try/catches and other checks for invalid values coming in and out of everything. I know I also
+                    skipped a lot of code to canonicalize the signed message.
+                </p>
+                <p>
+                    The StorageClient sample project in the Windows Azure SDK handles the canonicalization parts and has
+                    some checks. Would it then be better to use the StorageClient sample project? Is it more robust.
+                    With this being a sample project, Microsoft won't back up those expectations:
+                    "<a
+                        href="http://social.msdn.microsoft.com/Forums/en-US/windowsazure/thread/e1f749bc-aa7c-4e64-8adf-dbd43a559c31/">...
+                        we [Microsoft] do not take responsibility that the implementation of the library is the best for
+                        perf/robustness.
+                    </a>". So expect little or no support using this sample.
+                </p>
+                <p>
+                    This raises a fourth question:
+                </p>
+                <h3>
+                    Why isn't this functionality part of the SDK?
+                </h3>
+                <p>
+                    My guess is that the Azure dev team still are working on what the API will look like. Personally, I
+                    think pulling out canonicalization and authentication as seperate classes would be a good idea. This
+                    would give us several choices of how to Work with not only Table Storage, but also the blob and
+                    queue storages which use the same authentication schemes, and might have similar canonicalization
+                    needs. Even when using the REST API those libraries would be appreciated.
+                </p>
+                <p>
+                    My guess is that the StorageClient sample wil evolve some more, and eventually the most important
+                    parts of it will make its way into the SDK.
+                </p>
+                <p>
+                    Microsoft are however committed to the
+                    <a href="http://msdn.microsoft.com/en-us/library/dd179355.aspx">REST API</a>. Maybe thats our
+                    safest bet at the moment. Remember, Windows Azure is still in beta. (At the time of writing I'm
+                    using the July CTP of Windows Azure
+                    SDK.)
+                </p>
+
+            </article>
+        </section>
+    </div>
+</body>
+
+</html>

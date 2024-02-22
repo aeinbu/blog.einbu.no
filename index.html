@@ -2,25 +2,73 @@
 <html lang="en">
 
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<meta http-equiv="X-UA-Compatible" content="ie=edge">
-	<title>Arjans blog</title>
-	<link rel="stylesheet" href="/css/layout.css">
-	<link rel="stylesheet" href="/css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Arjans blog</title>
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/style.css">
 </head>
 
 <body>
-	<div class="container main">
-		<section class="no-columns">
-			<h1>Arjans blog</h1>
-			<p>
+    <div class="container main">
+        <section class="no-columns">
+            <h1>Arjans blog</h1>
+            <p>
                 Arjan: Technical Learnings of Programmings for Make Benefit Glorious Framework of .NET
-			</p>
-			<p class="signature">-Arjan Einbu</p>
-		</section>
+            </p>
+            <p class="signature">-Arjan Einbu</p>
+        </section>
 
-		<section class="columns">
+        <section class="columns">
+
+
+            <article class="block border">
+                <h2>Custom ASP.NET DataSource parameters</h2>
+                <small>February 2010</small>
+                <p>
+                    With ASP.NETs DataSource controls you can parameterize your query and have those parameters
+                    automatically fetched from one of a few standard sources. Those include getting a parameter value
+                    from the querystring, a form parameter, a control or from a users session variables, profile or
+                    cookies.
+                </p>
+                <p>
+                    These parameter types enables us to build a lot of functionality without leaving ASP.NET markup.
+                    Still, they don't cover every imaginable scenario. So when someone asked how
+                    to get the username as a parameter in this question on Stackoverflow, it inspired me to
+                    write this article.
+                </p>
+                <p><a href="/2010/02/custom-asp-net-datasource-parameters/index.html">Continue reading</a></p>
+            </article>
+
+
+            <article class="block border">
+                <h2>Diving deeper into Windows Azure table storage</h2>
+                <small>September 2009</small>
+                <p>
+                    In a previous post about Windows Azure Table Storage</a>, I relied on the StorageClient project in
+                    the Azure SDK samples. This feels a bit strange, and raises the question: Am I expected to include
+                    references to sample projects and be using Microsoft.Samples.whatever namespaces in my future
+                    projects?
+                </p>
+                <p>
+                    This raises a couple of questions about license, copyright, support and more. Instead of digging
+                    into those questions, I came up with some alternate questions:
+                </p>
+                <ul>
+                    <li>What does this sample project give us?</li>
+                    <li>How does it work?</li>
+                    <li>Can we do these things ourselves?</li>
+                </ul>
+                <p>
+                    A lot of the searching was done in the sample code, since most of the other articles about accessing
+                    Windows Azure Table Storage depend on the same sample files. I was disappointed to see that even the
+                    Windows Azure SDK help file shows some partial code calling into the sample project. Little help
+                    there…
+                </p>
+                <p><a href="/2009/09/diving-deeper-into-windows-azure-table-storage/index.html">Continue reading</a></p>
+            </article>
+
 
             <article class="block border">
                 <h2>
@@ -28,17 +76,59 @@
                 </h2>
                 <small>August 2009</small>
                 <p>
-                    Ok, I know this isn't exactly breaking news. Twitter has been out there for a couple of years, but still many people don't know what Twitter is.
+                    Ok, I know this isn't exactly breaking news. Twitter has been out there for a couple of years, but
+                    still many people don't know what Twitter is.
                 </p>
-				<p>
-                    If you're one of them, have a look at this short video explaining Twitter. <em>(Link in the article)</em>
+                <p>
+                    If you're one of them, have a look at this short video explaining Twitter. <em>(Link in the
+                        article)</em>
                 </p>
-				<p>
+                <p>
                     And even knowing what Twitter is, fewer understand the fascination with it.
-                    I think Twitter with its simplicity has several interresting aspects, and they are different for all of us.
+                    I think Twitter with its simplicity has several interresting aspects, and they are different for all
+                    of us.
                 </p>
-				<p><a href="/2009/08/what-is-the-fascination-with-twitter/">Continue reading</a></p>
+                <p><a href="/2009/08/what-is-the-fascination-with-twitter/">Continue reading</a></p>
             </article>
+
+
+            <article class="block border">
+                <h2>Authenticating against Azure Table Storage</h2>
+                <small>August 2009</small>
+                <p>
+                    When searching for articles/blogs/samples about using Azure Table Storage from .NET, it seems most
+                    of them (if not all) depend on the StorageClient sample in the Azure SDK. I read about
+                    authentication with SharedKey or SharedKeyLite, and I always found the magic of these authentication
+                    schemes were wrapped up into several layers of abstractions in this SDK sample.
+                </p>
+                <p>
+                    Hoping that I could get at my data without it (the sample), I needed to research how to authenticate
+                    against Azure Table Storage. So how does it all work?
+                </p>
+                <p><a href="/2009/08/authenticating-against-azure-table-storage/index.html">Continue reading</a></p>
+            </article>
+
+
+            <article class="block border">
+                <h2>How to use Windows Azure table storage</h2>
+                <small>August 2009</small>
+                <p>
+                    I found several great articles showing how to work with Windows Azure Table Storage:
+                </p>
+                <ul>
+                    <li>Rob Bagby's Azure Application Part 2: Access Azure Table Storage</li>
+                    <li>Jim Nakashima's Windows AzureWalkthrough: Table Storage</li>
+                    <li>Video tutorials on Microsofts Azure developer portal</li>
+                </ul>
+                <p>
+                    All these, however, assume that the table storage will be used from an Azure web or worker role. I
+                    wanted to see if the Windows Azure Table Store could be used with applications running elsewhere,
+                    like on your computer. I'm creating a console application here, but the code can be easily adapted
+                    to a WPF, Windows Forms or even an ASP.NET application too.
+                </p>
+                <p><a href="/2009/08/howto-use-windows-azure-table-storage/index.html">Continue reading</a></p>
+            </article>
+
 
             <article class="block border">
                 <h2>
@@ -48,82 +138,94 @@
                 <p>
                     RecentIy I needed to find a specific TreeNode in a TreeView control.
                 </p>
-				<p>
-                    I expected that would be easy with LINQ, but quickly realized that there is no method in the .NET framework that will let me traverse all nodes of a hierarchy.
+                <p>
+                    I expected that would be easy with LINQ, but quickly realized that there is no method in the .NET
+                    framework that will let me traverse all nodes of a hierarchy.
                 </p>
-				<p>
+                <p>
                     I decided to create one myself.
                 </p>
-				<p><a href="/2009/07/traverse-a-hierarchy-with-linq-to-hierarchical/">Continue reading</a></p>
-
+                <p><a href="/2009/07/traverse-a-hierarchy-with-linq-to-hierarchical/">Continue reading</a></p>
             </article>
 
-            <article class="highlight">
+
+            <article class="block border">
                 <h2>Mythbusters: Unit-testing</h2>
                 <small>July 2009</small>
                 <p>
-                    While I believe most or many developers have heard of JUnit/NUnit/&lt;your testing framework here&gt;, fewer know how to write a test and running it using such a framework. And from those, even fewer have a good understanding of how to make unit testing a part of the development workflow.
+                    While I believe most or many developers have heard of JUnit/NUnit/&lt;your testing framework
+                    here&gt;, fewer know how to write a test and running it using such a framework. And from those, even
+                    fewer have a good understanding of how to make unit testing a part of the development workflow.
                 </p>
-				<p>
-                    I've known about unit testing and unit test frameworks for maybe 7-8 years. I first tried using it in a small project 5-6 years ago, but it is only in the last few years that I've learned how to do it right. (ie. found a way that works for me and my team…)
+                <p>
+                    I've known about unit testing and unit test frameworks for maybe 7-8 years. I first tried using it
+                    in a small project 5-6 years ago, but it is only in the last few years that I've learned how to do
+                    it right. (ie. found a way that works for me and my team…)
                 </p>
-				<p> 
+                <p>
                     For me some of the things learned were:
                 </p>
-				<p><a href="/2009/07/myth-busting-unit-testing/">Continue reading</a></p>
+                <p><a href="/2009/07/myth-busting-unit-testing/">Continue reading</a></p>
             </article>
 
+
             <article class="block border">
-				<h2>The trouble with delimited</h2>
+                <h2>The trouble with delimited</h2>
                 <small>June 2009</small>
-				<p>
-                    In this previous article articles about parsing files, I took a very simplistic approach to reading a delimited file. I used string.Split, which doesn't handle the use of quotes and usage of the delimiter character inside quotes.
+                <p>
+                    In this previous article articles about parsing files, I took a very simplistic approach to reading
+                    a delimited file. I used string.Split, which doesn't handle the use of quotes and usage of the
+                    delimiter character inside quotes.
                 </p>
-				<p>
+                <p>
                     Well, it turns out theres more to reading a delimited file than splitting at the delimiter…
                 </p>
-				<p><a href="/2009/06/the-trouble-with-delimited/">Continue reading</a></p>
-			</article>
+                <p><a href="/2009/06/the-trouble-with-delimited/">Continue reading</a></p>
+            </article>
 
-			<article class="block border">
-				<h2>
+
+            <article class="block border">
+                <h2>
                     More parsing textfiles with LINQ
                 </h2>
                 <small>March 2009</small>
-				<p>
+                <p>
                     In a previous article, I described how to use LINQ when parsing a textfile.
                 </p>
-				<p>
-                    Following that train of thoughts further, I found a more elegant way of splitting the lines from the file into columns.
+                <p>
+                    Following that train of thoughts further, I found a more elegant way of splitting the lines from the
+                    file into columns.
                 </p>
-				<p>
-                    Creating extension methods on top of IEnumerable&lt;string&gt; seems like a good idea! Something that could be used like this for a comma-separated file:
+                <p>
+                    Creating extension methods on top of IEnumerable&lt;string&gt; seems like a good idea! Something
+                    that could be used like this for a comma-separated file:
                 </p>
                 <pre class="code">
 from columns in reader.AsEnumerable().AsDelimited(delimiter)
 select ...
 </pre>
-				<p><a href="/2009/04/more-parsing-textfiles-with-linq/">Continue reading</a></p>
-			</article>
+                <p><a href="/2009/04/more-parsing-textfiles-with-linq/">Continue reading</a></p>
+            </article>
+
 
             <article class="block border">
-				<h2>
+                <h2>
                     Parsing textfiles with LINQ (or LINQ-to-TextReader)
                 </h2>
                 <small>March 2009</small>
-				<p>
-                    Reading and parsing files is really no difficult task with the .NET framework. The System.IO namespace has several good classes to aid that task.
+                <p>
+                    Reading and parsing files is really no difficult task with the .NET framework. The System.IO
+                    namespace has several good classes to aid that task.
                 </p>
-				<p><a href="/2009/03/parsing-textfiles-with-linq/">Continue reading</a></p>
-			</article>
+                <p><a href="/2009/03/parsing-textfiles-with-linq/">Continue reading</a></p>
+            </article>
 
 
-
-		</section>
-	</div>
-	<footer class="container">
-		Copyright &copy; 2009-2024 Arjan Einbu.
-	</footer>
+        </section>
+    </div>
+    <footer>
+        Copyright &copy; 2009-2024 Arjan Einbu.
+    </footer>
 </body>
 
 </html>
