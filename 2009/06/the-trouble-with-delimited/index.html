@@ -7,14 +7,17 @@
     <link rel="stylesheet" href="/css/layout.css">
     <link rel="stylesheet" href="/css/style.css">
 </head>
+
 <body>
     <div class="container main">
-        <section class="no-columns">
+        <header>
+			<h1>Arjans blog</h1>
+		</header>
 
+        <section class="no-columns">
+            
             <article class="block border">
-                <h2>
-                    The trouble with delimited
-                </h2>
+                <h2>The trouble with delimited</h2>
                 <small>Originally published on blog.einbu.no June 27. 2009</small>
                 <p>
                     In this <a href="/2009/03/parsing-textfiles-with-linq/">previous article about parsing files</a>, I took a very simplistic approach to reading a delimited file. I used string.Split, which doesn't handle the use of quotes and usage of the delimiter character inside quotes.

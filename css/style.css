@@ -52,7 +52,7 @@ li+li {
 }
 
 .main {
-	background: #white;
+	background: white;
 }
 
 .no-columns {
@@ -98,7 +98,7 @@ header{
 
 .highlight {
 	background-color: violet;
-	padding: 10px;
+	/* padding: 10px; */
 }
 
 /* picframe rules*/
