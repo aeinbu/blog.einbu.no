@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authenticating against Azure Table Storage</title>
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container main">
+        <section class="no-columns">
+
+            <article class="block border">
+                <h2>Authenticating against Azure Table Storage</h2>
+                <small>Originally published on blog.einbu.no August 25. 2009</small>
+
+                When searching for articles/blogs/samples about using Azure Table Storage from .NET, it seems most of them (if not all) depend on the StorageClient sample in the Azure SDK. I read about authentication with SharedKey or SharedKeyLite, and I always found the magic of these authentication schemes were wrapped up into several layers of abstractions in this SDK sample.
+
+Hoping that I could get at my data without it (the sample), I needed to research how to authenticate against Azure Table Storage. So how does it all work?
+
+It all starts with the request...
+
+You can query a table by sending a http request to the Table Storage. Crafting the correct request involves setting the correct headers, and requesting the desired resource at the Azure storage services HTTP-endpoint.
+
+Azure Table Storage uses the same REST scheme as ADO.NET Data Services (Astoria), so with
+
+http://account_name.table.core.windows.net/name_of_table
+you'll get all the rows of a table. To filter the data, add the filter as the query string:
+
+http://account_name.table.core.windows.net/name_of_table()?top=3
+Ideally you should be able to do this from your favourite web browsers address bar!
+
+I'm sorry, but you can't. You'll need to authenticate to the Azure Table Store, and this is done by adding special headers to the request.
+
+What special headers?
+
+Well, the authentication headers, of course. Microsoft have devised two variations over a simple authentication scheme that we can choose between. They are called SharedKey and SharedKeyLite, and they involve adding a date header and an authentication header to the request.
+
+One of the more comprehensive articles I found on the topic, was this MSDN article. It tells what parts the signatures are made from, but again, the actual code sample is heavily dependent on the StorageClient sample project in the Azure SDK. (Did I say, this happens a lot?)
+
+Still most articles I come over when searching about using Azure Table Storage from C# use the StorageClient sample. It makes me wonder: Can I use Azure table storage without this sample? Or duplicating it?
+
+It turns out I can! Here is the first blogpost I found which shows how. And its really not that hard! Programatically in C# we should be able to do it quite easily when we know how to create and add those headers.
+
+Creating the SharedKey or SharedKeyLite headers
+
+The additional headers look the same for both of the authentiation schemes:
+
+x-ms-date: date_and_time
+Authorization: scheme_name account_name:signature
+where we specify the date_and_time, scheme_name, account_name and signature parts. The date_and_time is copied from either the date or x-ms-date header. Then we choose whether we're going to use the SharedKey or SharedKeyLite authentication scheme (replace scheme_name with either one), before filling in the account_name.
+
+Now only the signature remains! So, how do we create this signature? They're similar, but SharedKeyLite takes fewer variables in creating the signature than SharedKey does.
+
+To start with, we need to construct a string that contains some information about our request. Azure table storage must be able to re-create the same string on the server side, so all this information must also be available elsewhere in the request. Here is an actual sample of how it looks for SharedKey authentication:
+
+GET
+
+application/xml
+Mon, 24 Aug 2009 22:08:56 GMT
+/myaccount/mytable
+In the blank lines after the method (GET), you'll copy the Content-MD5 header if it exists, or just leave a blank line if you don't have it. The content-type in the third line is also optional, but it MUST match the value of the Content-Type header. SharedKeyLite is simpler than this, as its built from only the last two lines; the current time, and the line containing the account name (myaccount) and resource name (mytable).
+
+As you can see, the signature contains a time component to hinder record/playback attacks. Windows Azure only accepts this time within a range of 15 minutes, so make sure your computer's clock is right. The time component of the signature must also be added as a header so that Azure can verify the signature.
+
+Azure will accept this as either the "date" header or the "x-ms-date" header. I chose the latter one, so lets just add it:
+
+request.Headers.Add("x-ms-date", DateTime.Now.ToString("R"));
+From this we create this authorization header:
+
+Authorization: SharedKey myaccount:boiVITAm6Wf4NEoV0fTmu5YnAH6x/DG8CzWyaRu1UaI=
+In C# I'll construct the SharedKey signature with this string:
+
+string stringToSign = string.Format("{0}\n{1}\n{2}\n{3}\n/{4}/{5}",
+	request.Method,
+	request.Headers["Content-MD5"],
+	request.Headers["Content-Type"],
+	request.Headers["x-ms-date"],
+	account,
+	resource);
+...or the SharedKeyLite signature with this one:
+
+string stringToSign = string.Format("{0}\n/{1}/{2}",
+	request.Headers["x-ms-date"],
+	account,
+	resource);
+This string is then signed with the SHA256 algorithm using a shared key, and added in the authorization header. We can find the shared key typed out in base64 encoding in the Azure Admininstration web pages when we log in.
+
+We can now create the authorization header like this:
+
+var sharedKey = Convert.FromBase64("the_sharedkey_from_the_azure_web");
+
+var hasher = new HMACSHA256(sharedKey);
+
+string signature = hasher.ComputeHash(Encoding.UTF8.GetBytes(strignToSign))
+string authorizationHeader = string.Format("SharedKey {0}:{1}",
+	_account,
+	Convert.ToBase64String(signature));
+And add it like this:
+
+request.Headers.Add("Authorization", authorizationHeader);
+Putting it all together
+
+A complete WebRequest from C# to get data from Azure Table Storage with SharedKeyLite can be made like this:
+
+var account = "myaccount";
+var sharedKey = Convert.FromBase64String("Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==");
+
+var request = WebRequest.Create("http://myaccount.table.core.windows.net/mytable");
+request.ContentLength = 0;
+request.Headers.Add("x-ms-date", DateTime.UtcNow.ToString("R", CultureInfo.InvariantCulture));
+
+var resource = request.RequestUri.PathAndQuery;
+if (resource.Contains("?"))
+{
+	resource = resource.Substring(0, resource.IndexOf("?"));
+}
+
+string stringToSign = string.Format("{0}\n/{1}{2}",
+		request.Headers["x-ms-date"],
+		account,
+		resource
+	);
+
+var hasher = new HMACSHA256(sharedKey);
+
+string signedSignature = Convert.ToBase64String(hasher.ComputeHash(Encoding.UTF8.GetBytes(stringToSign)));
+string authorizationHeader = string.Format("{0} {1}:{2}", "SharedKeyLite", account, signedSignature);
+request.Headers.Add("Authorization", authorizationHeader);
+
+var response = request.GetResponse();
+
+using(var sr = new StreamReader(response.GetResponseStream()))
+{
+	var doc = XElement.Load(sr);
+
+	Console.WriteLine(doc);
+}
+Note: Remember to insert your own account and sharedKey in this code.
+
+Which to use?
+
+I've explained both the Sharedkey and SharedkeyLite authentication schemes for use with Azure Table Storage. Which one should I use?
+
+Since SharedKey is more robust than SharedKeyLite, that would be the obvious choice. However, we still need the SharedKeyLite scheme to access the Development Table Storage, since it is the only one that it accepts. (As of the July CTP of the Windows Azure SDK.)
+
+
+            </article>
+        </section>
+    </div>
+    <footer>
+		Copyright &copy; 2018-2024 Arjan Einbu.
+	</footer>
+</body>
+
+</html>
