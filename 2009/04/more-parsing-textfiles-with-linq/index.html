@@ -12,7 +12,7 @@
 <body>
     <div class="container main">
         <header>
-			<h1>Arjans blog</h1>
+			<h1><a href="/">Arjan's blog</a></h1>
 		</header>
 
         <section class="no-columns">
@@ -26,14 +26,14 @@
                 </p>
                 Following that train of thoughts further, I found a more elegant way of splitting the lines from the
                 file into columns. Creating extension methods on top of IEnumerable<string> seems like a good idea!
-                    Something that could be used like this for a comma-separated file:
+                    Something that could be used like this for a comma-separated file:
                     </p>
                     <pre class="code">
 from columns in reader.AsEnumerable().AsDelimited(delimiter)
 select ...
 </pre>
                     <p>
-                        Or like this for a fixed position format:
+                        Or like this for a fixed position format:
                     </p>
                     <pre class="code">
 from columns in reader.AsEnumerable().AsFixed(width, width, width...)

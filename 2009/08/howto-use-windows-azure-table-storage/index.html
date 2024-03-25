@@ -2,170 +2,308 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>How to use Windows Azure table storage</title>
-    <link rel="stylesheet" href="/css/layout.css">
-    <link rel="stylesheet" href="/css/style.css">
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>How to use Windows Azure table storage</title>
+	<link rel="stylesheet" href="/css/layout.css">
+	<link rel="stylesheet" href="/css/style.css">
 </head>
 
 <body>
-    <div class="container main">
-        <section class="no-columns">
+	<div class="container main">
+		<section class="no-columns">
 			<header>
-				<h1>Arjans blog</h1>
-			</header>	
+				<h1><a href="/">Arjan's blog</a></h1>
+			</header>
 
-            <article class="block border">
-                <h2>How to use Windows Azure table storage</h2>
-                <small>Originally published on blog.einbu.no August 3. 2009</small>
+			<article class="block border">
+				<h2>How to use Windows Azure table storage</h2>
+				<small>Originally published on blog.einbu.no August 3. 2009</small>
+				<p>
+					I found several great articles showing how to work with Windows Azure Table Storage:
+				</p>
+				<ul>
+					<li>Rob Bagby's <a
+							href="http://blogs.msdn.com/bags/archive/2009/04/14/azure-application-part-2-access-azure-table-storage.aspx">Azure
+							Application Part 2: Access Azure Table Storage</a></li>
+					<li>Jim Nakashima's <a
+							href="http://blogs.msdn.com/jnak/archive/2008/10/28/walkthrough-simple-table-storage.aspx">Windows
+							AzureWalkthrough: Table Storage</a></li>
+					<li><a href="http://www.microsoft.com/azure/windowsazurefordevelopers/default.aspx">Video
+							tutorials</a> on Microsofts Azure developer portal</li>
+				</ul>
+				<p>
 
-                I found several great articles showing how to work with Windows Azure Table Storage:
 
-Rob Bagby's Azure Application Part 2: Access Azure Table Storage
-Jim Nakashima's Windows AzureWalkthrough: Table Storage
-Video tutorials on Microsofts Azure developer portal
-All these, however, assume that the table storage will be used from an Azure web or worker role. I wanted to see if the Windows Azure Table Store could be used with applications running elsewhere, like on your computer. I'm creating a console application here, but the code can be easily adapted to a WPF, Windows Forms or even an ASP.NET application too.
-
-To follow my instructions, you'll need to download the Windows Azure SDK from here and install it. You'll also need to unpack the samples.zip included in the SDK. (Make sure you put it somewhere "writable", ie. not inside C:\Program Files\Windows Azure SDK\v1.0 where you found it. The Documents (in Vista) or My Documents folder (in XP or Windows 7) will do fine.)
-
-I'm using the July 2009 CTP of the Azure SDK here...
-
-Create a class library project for our entities and the service class
-
-This part is in about creating our schema and actual table(s).
-
-Start by creating a new class library project to hold the entities classes and the service class. Include references to:
-
-StorageClient (either include the project in the solution and create a project reference, or precompile it and just include the StorageClient.dll)
-System.Data.Services.Client
-In this project, create the entity classes, each of them deriving from the TableStorageEntity class from the Microsoft.Sample.ServiceHosting.StorageClient namespace. This class already supplies the three required fields TimeStamp, PartitionKey and RowKey properties, from which the last two together form the unique key for the entity. This defines a table's schema. We can add on properties to hold the values (columns) we need, like this:
-
+					All these, however, assume that the table storage will be used from an Azure web or worker role. I
+					wanted to see if the Windows Azure Table Store could be used with applications running elsewhere,
+					like on your computer. I'm creating a console application here, but the code can be easily adapted
+					to a WPF, Windows Forms or even an ASP.NET application too.
+				</p>
+				<p>
+					To follow my instructions, you'll need to <a
+						href="http://www.microsoft.com/azure/windowsazurefordevelopers/Default.aspx?path=DownloadToolsBtn">download
+						the Windows Azure SDK from here</a> and install it. You'll also need to unpack the samples.zip
+					included in the SDK. (Make sure you put it somewhere "writable", ie. not inside
+					<code>C:\Program Files\Windows Azure SDK\v1.0</code> where you found it. The Documents (in Vista) or
+					My Documents folder (in XP or Windows 7) will do fine.)
+				</p>
+				<p>
+					I'm using the July 2009 CTP of the Azure SDK here...
+				</p>
+				<h2>
+					Create a class library project for our entities and the service class
+				</h2>
+				<p>
+					This part is in about creating our schema and actual table(s).
+				</p>
+				<p>
+					Start by creating a new class library project to hold the entities classes and the service class.
+					Include references to:
+				</p>
+				<ul>
+					<li>StorageClient (either include the project in the solution and create a project reference, or
+						precompile it and just include the StorageClient.dll)</li>
+					<li>System.Data.Services.Client</li>
+				</ul>
+				<p>
+					In this project, create the entity classes, each of them deriving from the TableStorageEntity class
+					from the Microsoft.Sample.ServiceHosting.StorageClient namespace. This class already supplies the
+					three required fields TimeStamp, PartitionKey and RowKey properties, from which the last two
+					together form the unique key for the entity. This defines a table's schema. We can add on properties
+					to hold the values (columns) we need, like this:
+				</p>
+				<pre class="code">
 public class Article : TableStorageEntity
 {
-	public string Title { get; set; }
-	public DateTime Published { get; set; }
-	public string Body { get; set; }
+  public string Title { get; set; }
+  public DateTime Published { get; set; }
+  public string Body { get; set; }
 }
-Next we create the service (or context) class that will allow us to access the entities deriving from TableStorageDataServiceContext (also from the Microsoft.Sample.ServiceHosting.StorageClient namespace.) Here we create properties to expose collections of each entity. (Our table(s))
-
+</pre>
+				<p>
+					Next we create the service (or context) class that will allow us to access the entities deriving
+					from TableStorageDataServiceContext (also from the Microsoft.Sample.ServiceHosting.StorageClient
+					namespace.) Here we create properties to expose collections of each entity. (Our table(s))
+				</p>
+				<pre class="code">
 public class PublicationServiceContext : TableStorageDataServiceContext
 {
-	public DataServiceQuery
-Articles { get { return CreateQuery
-("Articles"); } } }
-Note: The property names must match value of the parameter to the CreateQuery call. This is because the tool we use to set up Development Storage uses reflection to find the name of the table, while the data services API (from the System.Data.Service.Client namespace) uses the string passed to the CreateQuery call.
-
-Compile the project. In the next part, we'll use this assembly to set up the development storage.
-
-Prepare development storage to store the entities
-
-Open the Windows Azure SDK Command Prompt, and run the devtablegen.exe utility to create the tables in the development store. Navigate to the folder where your binaries are compiled to, and execute:
-
-devtablegen.exe /forceCreate /database:mydatabasename myassembly.dll
-(You decide the name of the database to create in SQL Server, and myassembly.dll is the compiled output from our project.)
-
-Start the Development Storage service, pointing it to the newly created database. You can do this from the Windows Azure SDK Command Prompt like this:
-
+  public DataServiceQuery Articles
+  {
+    get
+    {
+      return CreateQuery("Articles");
+    }
+  }
+}
+</pre>
+				<p>
+					<em>
+						Note: The property names must match value of the parameter to the CreateQuery call. This is
+						because the tool we use to set up Development Storage uses reflection to find the name of the
+						table, while the data services API (from the System.Data.Service.Client namespace) uses the
+						string passed to the CreateQuery call.
+					</em>
+				</p>
+				<p>
+					Compile the project. In the next part, we'll use this assembly to set up the development storage.
+				</p>
+				<h2>
+					Prepare development storage to store the entities
+				</h2>
+				<p>
+					Open the Windows Azure SDK Command Prompt, and run the devtablegen.exe utility to create the tables
+					in the development store. Navigate to the folder where your binaries are compiled to, and execute:
+				</p>
+				<pre class="code">
+devtablegen.exe /forceCreate /database:mydatabasename myassembly.dll
+</pre>
+				<p>
+					(You decide the name of the database to create in SQL Server, and myassembly.dll is the compiled
+					output from our project.)
+				</p>
+				<p>
+					Start the Development Storage service, pointing it to the newly created database. You can do this
+					from the Windows Azure SDK Command Prompt like this:
+				</p>
+				<pre class="code">
 developmentstorage.exe /nogui /database:mydatabasename
-You can have a look in your SQL Server now. You'll find that a database was created with the schema defined in our previous assembly.
-
-Note: If Development Storage won’t start, it might be due to the fact that its default settings point to the .SQLEXPRESS instance. If you need to change to another instance, you can use the dsinit.exe utility for that: dsinit /sqlinstance:. (including the dot) will point it to use the default unnamed instance on your computer.
-
-Create the application
-
-Now we're ready to create a simple console app that inserts a new item in our table, and then lists the contents of our table.
-
-Create a new console application project. Include references to:
-
-StorageClient (as before; either include the project in the solution and create a project reference, or precompile it and just include the StorageClient.dll)
-System.Data.Services.Client
-The class library we made earlier.
-In program.cs, we'll write some code to access the table store:
-
+</pre>
+				<p>You can have a look in your SQL Server now. You'll find that a database was created with the schema
+					defined in our previous assembly.
+				</p>
+				<p>
+					<em>
+						Note: If Development Storage won't start, it might be due to the fact that its default settings
+						point to the .SQLEXPRESS instance. If you need to change to another instance, you can use the
+						dsinit.exe utility for that: <code>dsinit /sqlinstance:.</code> (including the dot) will point
+						it to use the default unnamed instance on your computer.
+					</em>
+				</p>
+				<h2>
+					Create the application
+				</h2>
+				<p>
+					Now we're ready to create a simple console app that inserts a new item in our table, and then lists
+					the contents of our table.
+				</p>
+				<p>
+					Create a new console application project. Include references to:
+				</p>
+				<ul>
+					<li>StorageClient (as before; either include the project in the solution and create a project
+						reference, or precompile it and just include the StorageClient.dll)</li>
+					<li>System.Data.Services.Client</li>
+					<li>The class library we made earlier.</li>
+				</ul>
+				<p>
+					In program.cs, we'll write some code to access the table store:
+				</p>
+				<pre class="code">
 class Program
 {
-	static void Main(string[] args)
-	{
+  static void Main(string[] args)
+  {
 
-		var newArticle = new Article
-		{
-			PartitionKey = "",
-			RowKey = Guid.NewGuid().ToString(),
-			Title = "First article",
-			Body = "Long version of first article",
-			Published = DateTime.Now.Date
-		};
+    var newArticle = new Article
+    {
+      PartitionKey = "",
+      RowKey = Guid.NewGuid().ToString(),
+      Title = "First article",
+      Body = "Long version of first article",
+      Published = DateTime.Now.Date
+    };
 
-		var ctx = new PublicationServiceContext();
-		ctx.AddObject("Articles", newArticle);
-		ctx.SaveChanges();
+    var ctx = new PublicationServiceContext();
+    ctx.AddObject("Articles", newArticle);
+    ctx.SaveChanges();
 
-		foreach (var article in ctx.Articles)
-		{
-			Console.WriteLine("{0} - {1}", article.RowKey, article.Title);
-		}
+    foreach (var article in ctx.Articles)
+    {
+      Console.WriteLine("{0} - {1}", article.RowKey, article.Title);
+    }
 
-		Console.ReadLine();  //Don't close the window 'til someone presses ENTER!
-	}
+    Console.ReadLine();  //Don't close the window 'til someone presses ENTER!
+  }
 }
-Note: When you create the new Article, you'll need to set the PartitionKey and RowKey strings. The SaveChanges statement will crash if any of them is null.
-Note 2: With the CTP, there are some differences between the Development Storage and the Azure table storage in the cloud. This is because the Development Storage uses SQL Server 2008 to store its data. Here that means it doesn't support dates before Janury 1., 1753 for the DateTime field, so you must set the Published DateTime to something else than its default value of January 1., year 1. Similiar differences/constraints are found with maximum string lengths.
-
-When table storage is used from an Azure web or worker role, we put the configuration in the .csdef and .cscfg files. Our console application doesn't have these, so we should put this in the app.config instead. (Right click on project, select Add -> New Item... and select Application Configuration File to create it.)
-
-The format/syntax in app.config is different from the .csdef and .cscfg files, so we need to do a slight rewrite to this:
-
-
-  
-  
-  
-
-The settings used here (including the AccountName and AccountSharedKey), are hardcoded into the development storage. (Meaning it will work on your machine. Just copy and paste from here.) When we're using Azure table storage in the next part, we'll change these.
-
-Compile and run to see it working with the development storage.
-
-Using the real thing: Azure table storage
-
-To set this up with the real Azure, you'll need an Azure account. You can sign up for beta access to Windows Azure by applying here.
-
-Log on to your account and select New Service, then select Storage Account and fill in the blanks on the next page or two. Remember the account name, you'll use it in your application's configuration file. When you've created the account, the page shows you some endpoint addresses and the Primary Access Key. You will need those when configuring your application to use the Windows Azure table storage.
-
-In the app.config file, set the AccountName value to your account name, the AccountShared value to the Primary Access Key listed. Finally set the TableStorageEndpoint value to the last listed endpoint value, with the account name stripped. In the beta, this is http://table.core.windows.net (Rob Bagby has some screenshots of this in his article. Search for "Consume Table Storage In The Cloud" on that page.)
-
-Now your application knows where the data is. But finally we need to make Azure table storage aware of the structure of the data. That means setting up the tables. Unfortunately, there's no tool like the devtablegen.exe tool we used for setting up the development storage. We're going to do this from code.
-
-We'll create a new console application to set up the tables for us. Include references to:
-
-StorageClient
-System.Data.Services.Client
-The class library we made earlier.
-In program.cs, we'll write some code to access the table store:
-
+</pre>
+				<p>
+					<em>
+						Note: When you create the new Article, you'll need to set the PartitionKey and RowKey strings.
+						The SaveChanges statement will crash if any of them is null.
+					</em>
+				</p>
+				<p>
+					<em>
+						Note 2: With the CTP, there are some differences between the Development Storage and the Azure
+						table storage in the cloud. This is because the Development Storage uses SQL Server 2008 to
+						store its data. Here that means it doesn't support dates before Janury 1., 1753 for the DateTime
+						field, so you must set the Published DateTime to something else than its default value of
+						January 1., year 1. Similiar differences/constraints are found with maximum string lengths.
+					</em>
+				</p>
+				<p>
+					When table storage is used from an Azure web or worker role, we put the configuration in the .csdef
+					and .cscfg files. Our console application doesn't have these, so we should put this in the
+					app.config instead. (Right click on project, select Add -> New Item... and select Application
+					Configuration File to create it.)
+				</p>
+				<p>
+					The format/syntax in app.config is different from the .csdef and .cscfg files, so we need to do a
+					slight rewrite to this:
+				</p>
+				<pre class="code">
+&lt;appSettings&gt;
+  &lt;add key="AccountName" value="devstoreaccount1"/&gt;
+  &lt;add key="AccountSharedKey"
+    value="Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="/&gt;
+  &lt;add key="TableStorageEndpoint" value="http://127.0.0.1:10002"/&gt;
+&lt;/appSettings&gt;
+</pre>
+				<p>
+					The settings used here (including the AccountName and AccountSharedKey), are hardcoded into the
+					development storage. (Meaning it will work on your machine. Just copy and paste from here.) When
+					we're using Azure table storage in the next part, we'll change these.
+				</p>
+				<p>
+					Compile and run to see it working with the development storage.
+				</p>
+				<p>
+					Using the real thing: Azure table storage
+				</p>
+				<p>
+					To set this up with the real Azure, you'll need an Azure account. You can <a
+						href="http://www.microsoft.com/azure/register.mspx">sign up for beta access to Windows Azure by
+						applying here</a>.
+				</p>
+				<p>
+					Log on to your account and select New Service, then select Storage Account and fill in the blanks on
+					the next page or two. Remember the account name, you'll use it in your application's configuration
+					file. When you've created the account, the page shows you some endpoint addresses and the Primary
+					Access Key. You will need those when configuring your application to use the Windows Azure table
+					storage.
+				</p>
+				<p>
+					In the app.config file, set the AccountName value to your account name, the AccountShared value to
+					the Primary Access Key listed. Finally set the TableStorageEndpoint value to the last listed
+					endpoint value, with the account name stripped. In the beta, this is <code>http://table.core.windows.net</code>
+					(Rob Bagby has some <a
+						href="http://blogs.msdn.com/bags/archive/2009/04/14/azure-application-part-2-access-azure-table-storage.aspx">screenshots
+						of this in his article</a>. Search for "Consume Table Storage In The Cloud" on that page.)
+				</p>
+				<p>
+					Now your application knows where the data is. But finally we need to make Azure table storage aware
+					of the structure of the data. That means setting up the tables. Unfortunately, there's no tool like
+					the devtablegen.exe tool we used for setting up the development storage. We're going to do this from
+					code.
+				</p>
+				<p>
+					We'll create a new console application to set up the tables for us. Include references to:
+				</p>
+				<ul>
+					<li>StorageClient</li>
+					<li>System.Data.Services.Client</li>
+					<li>The class library we made earlier.</li>
+				</ul>
+				<p>
+					In program.cs, we'll write some code to access the table store:
+				</p>
+				<pre class="code">
 class Program
 {
-	static void Main(string[] args)
-	{
-		var acct = StorageAccountInfo.GetDefaultTableStorageAccountFromConfiguration();
-		TableStorage.CreateTablesFromModel(typeof(PublicationServiceContext), acct);
-	}
+  static void Main(string[] args)
+  {
+    var acct = StorageAccountInfo.GetDefaultTableStorageAccountFromConfiguration();
+    TableStorage.CreateTablesFromModel(typeof(PublicationServiceContext), acct);
+  }
 }
-Add the app.config file, and configure the settings for your Windows Azure store:
+</pre>
+				<p>
+					Add the app.config file, and configure the settings for your Windows Azure store:
+				</p>
+<pre class="code">
+&lt;appSettings&gt;
+  &lt;add key="AccountName" value="???"/&gt;
+  &lt;add key="AccountSharedKey" value="???"/&gt;
+  &lt;add key="TableStorageEndpoint" value="http://table.core.windows.net"/&gt;
+&lt;/appSettings&gt;
+</pre>
 
 
-  
-  
-  
-
-Compile and run. Enjoy!
-
-Now you should be able use Windows Azure table storage in the cloud with your program!
 
 
-            </article>
-        </section>
-    </div>
-    <footer>
+
+				<p>
+					Compile and run. Enjoy!
+				</p>
+				<p>
+					Now you should be able use Windows Azure table storage in the cloud with your program!
+				</p>
+			</article>
+		</section>
+	</div>
+	<footer>
 		Copyright &copy; 2018-2024 Arjan Einbu.
 	</footer>
 </body>
